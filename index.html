@@ -651,16 +651,21 @@ window.addEventListener('scroll',()=>{document.querySelector('.header').classLis
 const observer=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}})},{threshold:0.1});
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
 
-const popupState={exit:false,scroll:false,timed:false};
+const popupQueue=['popupTimed','popupScroll','popupExit'];
+let popupIndex=0;let lastPopupTime=0;
 function closePopup(id){document.getElementById(id).classList.remove('active')}
 function isAnyPopupActive(){return !!document.querySelector('.popup-overlay.active')}
+function showNextPopup(){
+  if(popupIndex>=popupQueue.length||isAnyPopupActive())return;
+  const now=Date.now();
+  if(popupIndex>0&&now-lastPopupTime<15000)return;
+  const id=popupQueue[popupIndex];
+  document.getElementById(id).classList.add('active');
+  lastPopupTime=now;popupIndex++;
+}
 document.querySelectorAll('.popup-overlay').forEach(o=>{o.addEventListener('click',(e)=>{if(e.target===o)closePopup(o.id)})});
-document.addEventListener('mouseleave',(e)=>{if(e.clientY<0&&!popupState.exit&&!isAnyPopupActive()){popupState.exit=true;document.getElementById('popupExit').classList.add('active')}});
-window.addEventListener('scroll',()=>{
-  const pct=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight);
-  if(pct>0.5&&!popupState.scroll&&!isAnyPopupActive()){popupState.scroll=true;document.getElementById('popupScroll').classList.add('active')}
-});
-setTimeout(()=>{if(!popupState.timed&&!isAnyPopupActive()){popupState.timed=true;document.getElementById('popupTimed').classList.add('active')}},20000);
+setTimeout(showNextPopup,10000);
+setInterval(()=>{if(!isAnyPopupActive())showNextPopup()},3000);
 
 // CANVAS VIDEO RENDERER (mobile-aware)
 (function(){
